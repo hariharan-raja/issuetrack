@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter_svg/svg.dart';
+import 'package:lottie/lottie.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:web_socket_channel/status.dart' as status;
 import 'package:animated_emoji/emoji.dart';
@@ -19,7 +21,7 @@ class HomePage extends StatefulWidget {
 }
 class _HomePageState extends State<HomePage> {
   int? guestMoodSelected;
-  int? selectedValue;
+  int? selectedValue = 1;
   final record = AudioRecorder();
   List<int> audioData = [];
   StreamSubscription<Uint8List>? audioSubscription;
@@ -40,6 +42,7 @@ class _HomePageState extends State<HomePage> {
   @override
   void dispose() {
     audioSubscription?.cancel();
+    channel?.sink.close();
     record.dispose();
     super.dispose();
   }
@@ -79,7 +82,7 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     // TODO: implement initState
     super.initState();
-    initializeRecorder();
+
   }
 
   Future<void> initializeRecorder() async {
@@ -87,7 +90,7 @@ class _HomePageState extends State<HomePage> {
     if (await record.hasPermission()) {
       // Connect to WebSocket
       channel = WebSocketChannel.connect(
-        Uri.parse('ws://127.0.0.1:8000/ws/audio'),
+        Uri.parse('wss://on-board-demo.azurewebsites.net/ws/audio'),
       );
 
       record.onStateChanged().listen((state) {
@@ -110,14 +113,6 @@ class _HomePageState extends State<HomePage> {
 
         // Send over WebSocket
         channel?.sink.add(dataChunk);
-
-        // Reset silence timer if there's sound
-        silenceTimer?.cancel();
-        silenceTimer = Timer(const Duration(seconds: 5), () {
-          print("Silence detected: stopping recording.");
-          stopRecording();
-        });
-
         setState(() {});
       });
 
@@ -130,7 +125,6 @@ class _HomePageState extends State<HomePage> {
         model =  issueDetailsModel.fromJson(valueMap);
         onDataReceived();
         print("Transcription: $message");
-        // TODO: Add UI update here
       });
     } else {
       print('Permission denied.');
@@ -146,7 +140,8 @@ class _HomePageState extends State<HomePage> {
     }
     if(model.guestDetails?.firstName!=null){
       setState(() {
-        nameTextEditController.text = nameTextEditController.text+(model.guestDetails?.firstName??"");
+        nameTextEditController.clear();
+        nameTextEditController.text = model.guestDetails?.firstName??"";
       });
       viewModel.guestDetails?.firstName = model.guestDetails?.firstName??"";
     }
@@ -194,6 +189,7 @@ class _HomePageState extends State<HomePage> {
     if(model.compensation!=null){
       setState(() {
         compensationTextEditController.text = model.compensation??"";
+        selectedValue = 0;
       });
       viewModel.compensation = model.compensation;
     }
@@ -204,6 +200,64 @@ class _HomePageState extends State<HomePage> {
       viewModel.summary = model.summary;
     }
 
+  }
+
+  cancelIssue(){
+    setState(() {
+     model = issueDetailsModel();
+    viewModel = issueDetailsModel();
+     cabinTextEditController.clear();
+    nameTextEditController.clear();
+    issueTypeTextEditController.clear();
+    priorityTextEditController.clear();
+    departmentTextEditController.clear();
+    locationTextEditController.clear();
+   compensationTextEditController.clear();
+    conversationSummaryTextEditController.clear();
+     selectedValue = 1;
+     guestMoodSelected= null;
+    });
+    channel?.sink.close();
+    record.stop();
+    initializeRecorder();
+  }
+
+  createIssue(){
+    record.stop();
+    audioSubscription?.cancel();
+    channel?.sink.close();
+    // record.dispose();
+    showDialog(
+      context: context,
+      barrierDismissible: false, // Prevents dismissing by tapping outside
+      builder: (BuildContext context) {
+        return WillPopScope(
+          onWillPop: () async => false,
+          child: AlertDialog(
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.all(Radius.circular(12)),
+            ),
+            title: Text(
+              "Issue Created",
+              style: GoogleFonts.kanit(fontSize: 25, color: Colors.black),
+            ),
+            content: Padding(
+              padding: const EdgeInsets.all(8),
+              child: SizedBox(
+                height: 300,
+                width: 300,
+                child: Lottie.network(
+                  "https://lottie.host/fbc0f00c-6899-48a4-9382-e25be33ab2cd/hMEqUTzCoI.json",
+                  repeat: true,
+                  reverse: false,
+                  animate: true,
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 
 
@@ -222,10 +276,68 @@ class _HomePageState extends State<HomePage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Padding(
-                padding: const EdgeInsets.only(left: 8.0),
-                child: Text("Create New Issue",
-                  style: GoogleFonts.kanit(fontWeight: FontWeight.bold,fontSize: 35 ,color: Colors.black
-                  ),
+                padding: const EdgeInsets.only(left: 8.0,right: 8.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text("Create New Issue",
+                      style: GoogleFonts.kanit(fontWeight: FontWeight.bold,fontSize: 35 ,color: Colors.black
+                      ),
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        if(!isRecording) {
+                          initializeRecorder();
+                        }
+                        // Add your onPressed functionality here
+                      },
+                      style: !isRecording? ElevatedButton.styleFrom(
+                        backgroundColor: Color(0XFFDE0A26), // Button color
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(11), // Border radius
+                        ),
+                        minimumSize: Size(160, 50), // Minimum size of the button
+                        elevation:isRecording ? 0 : 5, // Default elevation
+                      ).copyWith(
+                        elevation: WidgetStateProperty.resolveWith<double>((states) {
+                          if (states.contains(WidgetState.pressed)) {
+                            return 1; // Reduced elevation when button is pressed
+                          }
+                          return 5; // Default elevation
+                        }),
+                      ) :
+                      ElevatedButton.styleFrom(
+                        backgroundColor: Color(0XFFDE0A26).withOpacity(0.3), // Button color
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(11), // Border radius
+                        ),
+                        minimumSize: Size(160, 50), // Minimum size of the button
+                        elevation: 5, // Default elevation
+                      )
+                      ,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          SvgPicture.asset(
+                            'assets/mic.svg',
+                            height: 18,
+                            width: 15,
+                            color: isRecording ? Colors.white.withOpacity(0.5):Colors.white,
+                          ),
+                          SizedBox(width: 10),
+                          Text(
+                            "Start conversation",
+                            style: GoogleFonts.inter(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: isRecording ? Colors.white.withOpacity(0.5):Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+
+                  ],
                 ),
               ),
               Padding(
@@ -323,6 +435,7 @@ class _HomePageState extends State<HomePage> {
                       OutlinedButton(
                         onPressed: () {
                           // Cancel action
+                          cancelIssue();
                         },
                         style: OutlinedButton.styleFrom(
                           padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -340,6 +453,7 @@ class _HomePageState extends State<HomePage> {
                       ElevatedButton(
                         onPressed: () {
                           // Create Issue action
+                          createIssue();
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.blue, // Blue background
@@ -845,6 +959,10 @@ class _HomePageState extends State<HomePage> {
               Padding(
                 padding: const EdgeInsets.only(left:20,top: 5,right: 20),
                 child: TextFormField(
+                  controller: conversationSummaryTextEditController,
+                  onChanged: (value) {
+                    viewModel.summary = value;
+                  },
                   maxLines: 5,
                   cursorColor: Colors.grey,
                   decoration: InputDecoration(
