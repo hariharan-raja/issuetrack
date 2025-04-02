@@ -225,6 +225,7 @@ class _HomePageState extends State<HomePage> {
       setState(() {
         compensationTextEditController.clear();
         compensationTextEditController.text = model.compensation??"";
+        isCompensationOffered = true;
       });
     }
     if(model.summary!=null){
@@ -528,7 +529,10 @@ class _HomePageState extends State<HomePage> {
                   )
                 ],
               ),
-              conversationSummary(context),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 10,),
+                child: conversationSummary(context),
+              ),
             ],
           ),
         ),
@@ -879,7 +883,7 @@ class _HomePageState extends State<HomePage> {
 
   Widget compensationDetails(BuildContext context){
     return SizedBox(
-      width: MediaQuery.of(context).size.width * 0.4,
+      width: MediaQuery.of(context).size.width * 0.39,
       child:Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -906,11 +910,24 @@ class _HomePageState extends State<HomePage> {
           SizedBox(height: 8),
           Text('Compensation Type'),
           SizedBox(height: 4),
-          TextField(
-            enabled: isCompensationOffered,
-            decoration: InputDecoration(
-              border: OutlineInputBorder(),
-              hintText: 'Enter compensation type',
+          Padding(
+            padding: const EdgeInsets.only(top: 5,right: 20),
+            child: TextFormField(
+              controller: compensationTextEditController,
+              enabled: isCompensationOffered,
+              cursorColor: Colors.grey,
+              decoration: InputDecoration(
+                enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.grey.shade300), // Light grey outline
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.grey.shade500), // Slightly darker grey when focused
+                ),
+                border: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.grey.shade300), // Default border color
+                ),
+                hoverColor: Colors.grey,
+              ),
             ),
           ),
         ],
