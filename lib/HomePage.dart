@@ -380,40 +380,66 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
               ),
-              Card(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8), // Rounded corners
-                ),
-                color: Colors.blue.shade50, // Light blue background
-                child: Padding(
-                  padding: EdgeInsets.all(12),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Icon(Icons.info_outline, color: Colors.blue), // Info icon
-                      SizedBox(width: 8), // Spacing
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "AI Assistance Active",
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.blue, // Blue text color
+              SizedBox(
+                width: MediaQuery.of(context).size.width,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    SizedBox(
+                      width: MediaQuery.of(context).size.width * 0.85,
+                      child: Card(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8), // Rounded corners
+                        ),
+                        color: Colors.blue.shade50, // Light blue background
+                        child: Padding(
+                          padding: EdgeInsets.all(12),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Icon(Icons.info_outline, color: Colors.blue), // Info icon
+                              SizedBox(width: 8), // Spacing
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    "AI Assistance Active",
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.blue, // Blue text color
+                                    ),
+                                  ),
+                                  SizedBox(height: 4),
+                                  Text(
+                                    "The AI has analyzed the conversation and pre-filled the form fields. Review and edit as needed before submitting.",
+                                    style: TextStyle(fontSize: 14, color: Colors.blue),
+                                  ),
+                                ],
                               ),
-                            ),
-                            SizedBox(height: 4),
-                            Text(
-                              "The AI has analyzed the conversation and pre-filled the form fields. Review and edit as needed before submitting.",
-                              style: TextStyle(fontSize: 14, color: Colors.blue),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        // Create Issue action
+                        createIssue();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue, // Blue background
+                        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16), // Matching the curvature
+                        ),
+                      ),
+                      child: Text(
+                        "Create Issue",
+                        style: TextStyle(color: Colors.white, fontSize: 16),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               Padding(
