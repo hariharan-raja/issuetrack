@@ -25,6 +25,7 @@ class _HomePageState extends State<HomePage> {
   StreamSubscription<Uint8List>? audioSubscription;
   WebSocketChannel? channel;
   bool isRecording = false;
+  bool isStopped = false;
   bool isCompensationOffered = false;
   Timer? sendTimer;
   issueDetailsModel model = issueDetailsModel();
@@ -86,6 +87,7 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> initializeRecorder() async {
     if (await record.hasPermission()) {
+      isStopped = false;
       channel = WebSocketChannel.connect(
         // Uri.parse('ws://localhost:8000/ws/audio'),
         Uri.parse('wss://on-board-demo.azurewebsites.net/ws/audio'),
@@ -237,7 +239,19 @@ class _HomePageState extends State<HomePage> {
 
   }
 
+
+  stopListening(){
+    record.stop();
+    audioSubscription?.cancel();
+    channel?.sink.close();
+    isStopped = true;
+  }
+
   cancelIssue(){
+    record.stop();
+    isStopped = false;
+    audioSubscription?.cancel();
+    channel?.sink.close();
     setState(() {
      model = issueDetailsModel();
      cabinTextEditController.clear();
@@ -249,17 +263,32 @@ class _HomePageState extends State<HomePage> {
    compensationTextEditController.clear();
     conversationSummaryTextEditController.clear();
      selectedValue = 1;
+     isCompensationOffered = false;
      guestMoodSelected= null;
     });
-    channel?.sink.close();
-    record.stop();
-    initializeRecorder();
+    // channel?.sink.close();
+    // record.stop();
+    // initializeRecorder();
   }
 
   createIssue(){
     record.stop();
     audioSubscription?.cancel();
     channel?.sink.close();
+    setState(() {
+      model = issueDetailsModel();
+      cabinTextEditController.clear();
+      nameTextEditController.clear();
+      issueTypeTextEditController.clear();
+      priorityTextEditController.clear();
+      departmentTextEditController.clear();
+      locationTextEditController.clear();
+      compensationTextEditController.clear();
+      conversationSummaryTextEditController.clear();
+      selectedValue = 1;
+      isCompensationOffered = false;
+      guestMoodSelected= null;
+    });
     // record.dispose();
     showDialog(
       context: context,
@@ -422,23 +451,73 @@ class _HomePageState extends State<HomePage> {
                         ),
                       ),
                     ),
-                    ElevatedButton(
-                      onPressed: () {
-                        // Create Issue action
-                        createIssue();
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue, // Blue background
-                        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16), // Matching the curvature
+                    Column(
+                      children: [
+                        Visibility(
+                          visible: isRecording || isStopped,
+                          child: ElevatedButton(
+                            onPressed: () {
+                              // Create Issue action
+                              createIssue();
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blue, // Blue background
+                              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16), // Matching the curvature
+                              ),
+                            ),
+                            child: Text(
+                              "Create Issue",
+                              style: TextStyle(color: Colors.white, fontSize: 16),
+                            ),
+                          ),
                         ),
-                      ),
-                      child: Text(
-                        "Create Issue",
-                        style: TextStyle(color: Colors.white, fontSize: 16),
-                      ),
-                    ),
+                        SizedBox(height: 10,),
+                        Visibility(
+                          visible: isRecording || isStopped,
+                          child: OutlinedButton(
+                            onPressed: () {
+                              // Cancel action
+                              cancelIssue();
+                            },
+                            style: OutlinedButton.styleFrom(
+                              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                              side: BorderSide(color: Colors.grey.shade400), // Light grey border
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(166), // Adjusted for less curvature
+                              ),
+                            ),
+                            child: Text(
+                              "Cancel",
+                              style: TextStyle(color: Colors.black, fontSize: 16),
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: 5,),
+                        Visibility(
+                          visible: isRecording ,
+                          child: OutlinedButton(
+                            onPressed: () {
+                              // Cancel action
+                              stopListening();
+                            },
+                            style: OutlinedButton.styleFrom(
+                              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                              side: BorderSide(color: Colors.grey.shade400), // Light grey border
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(166), // Adjusted for less curvature
+                              ),
+                            ),
+                            child: Text(
+                              "Stop listening",
+                              style: TextStyle(color: Colors.black, fontSize: 16),
+                            ),
+                          ),
+                        ),
+                      ],
+                    )
+
                   ],
                 ),
               ),
@@ -1014,14 +1093,14 @@ class _HomePageState extends State<HomePage> {
 }
 
 class issueDetailsModel {
-  int? issueTypeId;
+  String? issueTypeId;
   String? issueTypeDesc;
   String? priorityDesc;
   String? issueGroupDesc;
   String? level1DepartmentDesc;
   String? cabin;
   GuestDetails? guestDetails;
-  int? locationId;
+  String? locationId;
   String? guestEmotion;
   String? summary;
   String? compensation;
